@@ -6,6 +6,16 @@ import { getAccount, saveAccount } from "../lib/account";
 import { sendMessage, type ExtensionMessage, type AckResponse } from "../lib/messaging";
 import { SipClient } from "./sip-client";
 
+// SIP.js's internal transport keeps retrying a failed WSS connection in
+// the background and can reject those retry promises without anything in
+// our code awaiting them — left unhandled, that's what flags this
+// extension with errors in chrome://extensions even though we're already
+// surfacing registration failures through state.registration === "failed".
+window.addEventListener("unhandledrejection", (event) => {
+  console.warn("[offscreen] unhandled rejection (likely SIP.js transport retry)", event.reason);
+  event.preventDefault();
+});
+
 const client = new SipClient();
 
 client.onStateChange((state) => {

@@ -39,3 +39,9 @@ applies to the whole extension origin).
 
 Not yet implemented: hold/mute/DTMF/transfer, call history, contacts,
 multiple accounts (all M2+).
+
+**Testing against the Dinstar UC200 Pro**: confirmed it has no WSS/WebRTC
+support (UDP/TCP/TLS only), so the extension can't register to it directly.
+A WS↔UDP gateway (Asterisk) bridges the two — see
+[gateway/README.md](./gateway/README.md) for setup, and point the
+extension's WSS server field at the gateway instead of the PBX.

@@ -1,0 +1,87 @@
+; WS<->UDP SIP gateway bridging the Chrome extension (WebRTC + SIP-over-WS)
+; to the Dinstar UC200 Pro (SIP-over-UDP only). Codecs are pinned to G.711
+; (ulaw/alaw) on both sides so no codec transcoding is needed — Chrome's
+; WebRTC stack negotiates PCMU/PCMA natively, and it's what the UC200 Pro
+; extension already uses. Copy this file to pjsip.conf and fill in the
+; placeholders before deploying; do not commit real credentials.
+
+[global]
+type=global
+user_agent=sip-chrome-extension-gateway
+
+; ---- Transport: browser side (SIP-over-WebSocket) ----
+
+[transport-ws]
+type=transport
+protocol=ws
+bind=0.0.0.0
+
+; ---- Transport: PBX side (plain UDP, LAN-only) ----
+
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+
+; ---- Browser-facing endpoint (what the extension registers as) ----
+
+[browser-ext]
+type=endpoint
+transport=transport-ws
+context=from-browser
+disallow=all
+allow=ulaw
+allow=alaw
+webrtc=yes
+dtls_auto_generate_cert=yes
+rtcp_mux=yes
+auth=browser-ext-auth
+aors=browser-ext-aor
+
+[browser-ext-auth]
+type=auth
+auth_type=userpass
+username=browser-ext
+password=CHANGE_ME_BROWSER_PASSWORD
+
+[browser-ext-aor]
+type=aor
+max_contacts=1
+
+; ---- Dinstar UC200 Pro side: register as extension 201 ----
+; Replace 192.168.0.110 with the UC200 Pro's LAN address, 201 with the
+; extension number, and CHANGE_ME_UC200_PASSWORD with that extension's
+; SIP password (the same one used in MicroSIP's "Password" field).
+
+[uc200-auth]
+type=auth
+auth_type=userpass
+username=201
+password=CHANGE_ME_UC200_PASSWORD
+
+[uc200-aor]
+type=aor
+contact=sip:201@192.168.0.110:5060
+
+[uc200]
+type=endpoint
+transport=transport-udp
+context=from-uc200
+disallow=all
+allow=ulaw
+allow=alaw
+outbound_auth=uc200-auth
+aors=uc200-aor
+
+[uc200-identify]
+type=identify
+endpoint=uc200
+match=192.168.0.110
+
+[uc200-registration]
+type=registration
+transport=transport-udp
+outbound_auth=uc200-auth
+server_uri=sip:192.168.0.110
+client_uri=sip:201@192.168.0.110
+retry_interval=60

@@ -134,8 +134,8 @@ transport, non-Chromium browsers.
 3. Enable **Developer mode** (top-right toggle).
 4. Click **Load unpacked**, select the `dist/` folder.
 5. Pin the extension icon; click it to open the popup and configure a SIP
-   account (SIP URI, password, WSS server URL, e.g.
-   `wss://pbx.example.com:8089/ws`).
+   account (SIP URI, password, WSS server URL). Against the UC200 Pro this
+   points at the `gateway/` bridge, not the PBX directly — see Section 5.
 
 **PBX-side prerequisites (needed before M1 can be tested end-to-end):**
 - A SIP account on a server that exposes a **WSS** transport with a valid
@@ -151,28 +151,35 @@ transport, non-Chromium browsers.
 Web Store publishing (or self-hosted `.crx` for internal use) is out of
 scope until it's ready to ship externally.
 
-## 5. Target PBX: Dinstar UC200 Pro
+## 5. Target PBX: Dinstar UC200 Pro — confirmed no WSS, gateway required
 
-The target device is a **Dinstar UC200 Pro** IP-PBX. This changes the
-prerequisites in Section 4:
+**Confirmed** (Dinstar's own UC200 Pro manuals/datasheet, and the device's
+own admin UI — SIP Trunk settings only offer UDP/TCP/TLS transport, same as
+MicroSIP's client-side Transport dropdown): the UC200 Pro has **no
+WebSocket/WSS/WebRTC support**, on either its trunk side or its extension
+side. This was the one hard blocker called out for the chosen WebRTC-only
+architecture, and it's real — the extension cannot register against the
+UC200 Pro directly.
 
-- The UC200 Pro is Dinstar's own PBX firmware (not Asterisk/FreePBX), with a
-  web admin UI for extensions/trunks/routing. Whether it exposes a **WSS
-  SIP transport** (required for a pure browser/WebRTC extension) needs to be
-  confirmed directly in its admin UI — check for a "WebRTC" or "WebSocket"
-  option under SIP/transport settings, and whether it issues/accepts a TLS
-  cert on that WS port. This should be verified against the actual device
-  before M1 starts, since it's the one hard blocker for the chosen
-  WebRTC-only architecture.
-- **If the UC200 Pro does not support WSS/WebRTC natively**: the fallback
-  is putting a lightweight WebSocket-to-UDP SIP gateway in front of it
-  (e.g. Kamailio or Asterisk configured purely as a WS↔UDP B2BUA/proxy) so
-  the extension still only ever speaks WSS, and the gateway relays to the
-  UC200 Pro over standard UDP SIP. This adds a small always-on server
-  component but keeps the extension itself pure WebRTC.
-- STUN/TURN: confirm whether the UC200 Pro has a built-in STUN server or
-  needs an external one configured for ICE, especially if the extension
-  and the PBX are on different networks (not just same-LAN testing).
+**Decision**: deploy a small **Asterisk-based WS↔UDP gateway**
+(`gateway/`) in front of the UC200 Pro. Asterisk registers to the UC200 Pro
+as a normal UDP extension (the existing extension 201) on one side, and
+exposes a `wss://.../ws` endpoint the Chrome extension registers to on the
+other, bridging calls between them. Codecs are pinned to G.711 (ulaw/alaw)
+on both legs so no transcoding is needed. See `gateway/README.md` for the
+full setup (Docker Compose + Asterisk config templates).
+
+**Network prerequisite**: the UC200 Pro is at a private LAN address
+(`192.168.0.110`), so the gateway must run somewhere that can reach it
+directly — either a machine on that same LAN (exposed to the internet via
+port-forward or a tunnel), or the Hostinger VPS with a site-to-site VPN
+back to that LAN. This is a deployment decision for you to make based on
+your actual network, documented with both options in `gateway/README.md`.
+
+STUN/TURN is not needed for this path — Asterisk terminates WebRTC media
+directly (no ICE negotiation needed beyond mDNS/host candidates on a LAN or
+between the extension and a public gateway) and speaks plain RTP to the
+UC200 Pro.
 
 ## 6. Persistent Background Operation
 

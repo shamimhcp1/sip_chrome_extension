@@ -1,0 +1,29 @@
+services:
+  asterisk:
+    image: andrius/asterisk:20-current
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+    volumes:
+      - ./asterisk:/etc/asterisk:ro
+    ports:
+      # SIP-over-WebSocket for the Chrome extension. Reverse-proxy this
+      # (Traefik/nginx) to add TLS -> wss://; do not expose 8088 directly
+      # to the internet as plain ws://.
+      - "8088:8088/tcp"
+      # UDP trunk to the Dinstar UC200 Pro. Must be reachable on the same
+      # LAN/VPN as the PBX (see gateway/README.md) — this is NOT meant to
+      # be exposed to the public internet.
+      - "5060:5060/udp"
+      # RTP media range.
+      - "10000-10200:10000-10200/udp"
+    labels:
+      # Example Traefik labels for terminating TLS and proxying WS -> the
+      # container's plain :8088. Adjust host/network/entrypoint names to
+      # match your Coolify/Traefik setup, or remove if you front this with
+      # something else.
+      - "traefik.enable=true"
+      - "traefik.http.routers.sip-gateway.rule=Host(`${GATEWAY_DOMAIN}`)"
+      - "traefik.http.routers.sip-gateway.entrypoints=websecure"
+      - "traefik.http.routers.sip-gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sip-gateway.loadbalancer.server.port=8088"
