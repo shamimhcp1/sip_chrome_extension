@@ -70,7 +70,13 @@ export class SipClient {
       displayName: account.displayName,
       authorizationUsername: account.authorizationUsername || uri.user,
       authorizationPassword: account.password,
-      transportOptions: { server: account.wssServer },
+      // Without a keepalive, an idle WebSocket gets silently dropped by
+      // Docker Desktop's port-forwarding / Windows Firewall / router NAT
+      // after a short idle timeout — confirmed live: SIP.js reported
+      // "Not connected" on the next send after ~15-25s idle, with no close
+      // frame ever received. A double-CRLF ping every 15s keeps the
+      // connection (and any NAT/firewall state for it) alive.
+      transportOptions: { server: account.wssServer, keepAliveInterval: 15 },
       delegate: {
         onInvite: (invitation) => this.handleIncomingCall(invitation),
       },
