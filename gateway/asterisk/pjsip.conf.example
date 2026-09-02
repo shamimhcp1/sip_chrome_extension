@@ -22,6 +22,20 @@ bind=0.0.0.0
 type=transport
 protocol=udp
 bind=0.0.0.0:5060
+; Without these, Asterisk advertises its own Docker bridge IP (e.g.
+; 172.18.0.2) in the Contact header and SDP of outbound requests instead of
+; the host's real LAN IP — confirmed live: the outbound INVITE to the UC200
+; Pro carried "Contact: <sip:201@172.18.0.2:5060>" and
+; "c=IN IP4 172.18.0.2", both unreachable from the UC200 Pro, and it
+; immediately rejected the call with 403 Forbidden. external_signaling_address
+; makes Asterisk rewrite Contact/Via to the host's real LAN IP for anything
+; outside local_net; external_media_address does the same for the SDP.
+; Replace 192.168.0.201 with whatever LAN IP this gateway host actually has,
+; and adjust local_net if your Docker/LAN subnet differs.
+external_signaling_address=192.168.0.201
+external_media_address=192.168.0.201
+local_net=172.16.0.0/12
+local_net=192.168.0.0/16
 
 ; ---- Browser-facing endpoint (what the extension registers as) ----
 
