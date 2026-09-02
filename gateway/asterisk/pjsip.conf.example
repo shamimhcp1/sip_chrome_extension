@@ -44,6 +44,16 @@ external_media_address=192.168.0.201
 ; local_net. Adjust the subnet below if your Docker bridge network differs
 ; (check with `docker network inspect` if unsure).
 local_net=172.16.0.0/12
+; Without this, pjproject can send outbound requests (REGISTER, INVITE)
+; from a different ephemeral local UDP port instead of reusing the bound
+; :5060 socket. Confirmed live: Windows' own netstat showed the actual
+; outbound packet to the UC200 Pro leaving from a random port (51858) even
+; though this transport binds 0.0.0.0:5060 and every SIP header declares
+; :5060 via external_signaling_address — and the UC200 Pro's own
+; extension-status page recorded the REGISTER as arriving from that same
+; random port, not :5060, so it stored the wrong contact and inbound calls
+; to 201 silently never arrived (nothing to forward that ephemeral port).
+symmetric_transport=yes
 
 ; ---- Browser-facing endpoint (what the extension registers as) ----
 
@@ -59,6 +69,18 @@ dtls_auto_generate_cert=yes
 rtcp_mux=yes
 auth=browser-ext-auth
 aors=browser-ext
+; Without this, Asterisk builds the From header for calls it originates
+; toward this endpoint (e.g. inbound calls from the UC200 Pro forwarded
+; here) using the Docker container's own hostname as the URI host —
+; confirmed live: "From: <sip:203@4023bc114763>" where 4023bc114763 is the
+; container ID. SIP's strict URI grammar requires a hostname's top label
+; to start with a letter, so a hex ID starting with a digit fails to
+; parse — SIP.js's parser rejected the header and silently dropped the
+; entire INVITE client-side, with no response sent and no error visible
+; anywhere except the browser's own console ("error parsing header
+; 'From'" / "Failed to parse incoming message. Dropping."). Replace
+; 192.168.0.201 with this gateway host's real LAN IP.
+from_domain=192.168.0.201
 
 [browser-ext-auth]
 type=auth

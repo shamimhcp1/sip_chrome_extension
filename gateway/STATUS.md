@@ -69,26 +69,91 @@ Asterisk gateway both run on the same Windows PC (`192.168.0.201`); extension
    WSL2 relay is less reliable for long-lived connections than the real LAN
    adapter).
 
-## Still open / needs a fresh live test
+## Solved (2026-09-02/03 session)
 
-- **201 → 203 (outbound call)**: last confirmed failure was `403 Forbidden`
-  from the UC200 Pro (`Reason: Q.850;cause=21`), received right after
-  `100 Trying`, with the INVITE's Contact/SDP showing the Docker-internal IP
-  (issue #6 above). Needs retest now that `external_signaling_address`/
-  `external_media_address` are confirmed loaded — if 403 persists with the
-  correct LAN IP now showing in the INVITE, the cause is something else
-  (e.g. a call-permission/ACL setting on the UC200 Pro side — checked the
-  Classification Tag tab, it was empty/unconfigured, so if it recurs, compare
-  extension 201's Setting-tab fields against 203's Setting tab in detail,
-  looking for any permission/CoS field not visible in the list view).
-- **203 → 201 (inbound call)**: last attempt produced **no Asterisk log at
-  all** — the call never reached the gateway. Not yet diagnosed why. Needs:
-  confirm 203 actually dialed `201` and see what happened on the MicroSIP
-  side (busy tone? no route? silent failure?), and capture
-  `pjsip set logger on` output on the Asterisk side during the attempt to
-  see if anything arrives from `192.168.0.110:5060` at all.
-- Once both directions connect, still need to confirm actual two-way audio
-  (not just signaling) to close out M1's exit criteria.
+9. **Both call directions failing with a port mismatch traced to Docker
+   Desktop's own networking, not Asterisk config.** The UC200 Pro's own
+   "SIP Extension > Status" page consistently showed extension 201's
+   REGISTER arriving from a different random ephemeral port every time
+   (59435, 58525, 51858, 56286...) instead of :5060, even after confirming
+   Asterisk's transport-udp binds 0.0.0.0:5060 and declares :5060 in every
+   header via external_signaling_address. Investigated and ruled out, in
+   order: Docker bridge NAT port-publish conflict, WSL2's own NAT layer
+   (tried enabling WSL2 "mirrored" networking mode — this actually broke
+   LAN-facing port publishing entirely, since Docker Desktop's port-forward
+   proxy doesn't bind the real Windows LAN adapter under mirrored mode;
+   reverted), and Docker "host" network mode (only reaches the WSL2 VM's
+   own namespace on Windows, not reachable from Chrome; reverted). Direct
+   evidence (Windows netstat showing the outbound UDP flow to
+   192.168.0.110:5060 relayed through the same PID as Docker's own
+   port-forward listener, using a fresh ephemeral port each time) confirmed
+   the real cause: Docker Desktop's Windows port-forwarding proxy relays
+   container-outbound UDP through a new ephemeral local port per flow
+   rather than preserving the container's bound port — a structural
+   limitation of Docker Desktop's networking, not something fixable via
+   Asterisk's pjsip.conf alone (tried `symmetric_transport=yes` on
+   transport-udp — loads fine but doesn't change this, since the issue is
+   in the port-forward proxy, not pjproject's socket handling).
+   **Working fix**: added `qualify_frequency=30` to `[uc200-aor]` in
+   pjsip.conf. Asterisk now sends an OPTIONS ping to the UC200 Pro every
+   30s, keeping that specific outbound "flow" continuously warm in Docker's
+   relay so the ephemeral port stays pinned between registration and an
+   actual call attempt (rather than expiring and rotating to a new port on
+   each new flow). Confirmed live: both directions worked in the same test
+   session immediately after this — 201->203 connected with two-way audio,
+   and 203->201 correctly rang through to the browser extension's
+   registered contact (Asterisk's own log showed "Nobody picked up in
+   30000 ms" only because the popup UI wasn't open to show the incoming
+   call, not a signaling failure — see #10).
+10. **Incoming calls only appeared if the extension popup happened to
+    already be open — no alert otherwise.** `src/offscreen/main.ts`
+    broadcasts `state-changed` via `chrome.runtime.sendMessage`, which only
+    reaches currently-open listeners; with the popup closed, a ringing
+    call's state change went nowhere and the call silently timed out after
+    30s with no indication anything happened. Fixed by having the always-
+    running background service worker (`src/background/main.ts`) listen for
+    `state-changed` directly and drive a `chrome.notifications` alert (with
+    Answer/Reject buttons that message the offscreen document directly, no
+    popup needed) plus a toolbar badge, cleared once the call leaves the
+    ringing state. Required adding actual icon assets
+    (`public/icons/icon{16,48,128}.png`, generated via PowerShell/
+    System.Drawing — none existed before) since `chrome.notifications`
+    requires a valid `iconUrl`.
+
+## Solved (cont'd)
+
+11. **203 → 201 INVITEs silently dropped in the browser with no error
+    visible anywhere except the offscreen document's own console.**
+    Asterisk's logs showed the INVITE being sent to the extension's
+    WebSocket successfully ("Called PJSIP/browser-ext") with no error, so
+    everything looked fine gateway-side — but nothing happened in the
+    browser, not even the automatic "100 Trying" SIP.js normally sends
+    immediately. Root cause, found by opening DevTools on the offscreen
+    document specifically (`chrome://extensions` → SIP Phone card →
+    "offscreen.html" link → Console tab) at the moment of a call: SIP.js's
+    parser was rejecting the `From` header — `From: "Hasib"
+    <sip:203@4023bc114763>` — because `4023bc114763` (the Docker
+    container's own hostname/ID) starts with a digit, and SIP's strict URI
+    grammar requires a hostname's top label to start with a letter. The
+    `[browser-ext]` endpoint in pjsip.conf had no `from_domain` set, so
+    Asterisk fell back to the container's hostname when building the From
+    header for the leg it originates toward the browser extension (i.e.
+    UC200 Pro calls forwarded here). Fixed by adding
+    `from_domain=192.168.0.201` to `[browser-ext]`, matching what was
+    already done for `[uc200]`.
+
+## Status: both directions confirmed working end-to-end (2026-09-02)
+
+- **201 → 203**: confirmed live with two-way audio.
+- **203 → 201**: confirmed live — the browser extension now shows the
+  incoming call and connects with two-way audio.
+- M1's exit criteria (two-way audio, both directions, on real hardware) is
+  met.
+
+Desktop-notification UX for incoming calls (background service worker +
+`chrome.notifications`, added in this session — see `src/background/
+main.ts`) confirmed working with the popup closed: notification pops up
+and answering connects the call. M1 is fully done.
 
 ## Diagnostic commands used throughout
 
