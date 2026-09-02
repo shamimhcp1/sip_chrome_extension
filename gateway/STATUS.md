@@ -40,13 +40,22 @@ Asterisk gateway both run on the same Windows PC (`192.168.0.201`); extension
    most likely cause of the UC200 Pro's `403 Forbidden` on browser→203
    calls. Fixed by adding `external_signaling_address`,
    `external_media_address` (set to the gateway host's real LAN IP,
-   `192.168.0.201` in this setup), and `local_net` (`172.16.0.0/12` +
-   `192.168.0.0/16`) to `[transport-udp]`. **Verified loaded** via
-   `pjsip show transport transport-udp` (both fields now show
-   `192.168.0.201`) — **not yet verified against a live call**, since the
-   last call test was run before this config took effect. Next step: retest
-   201→203 and confirm the INVITE's Contact/SDP now show `192.168.0.201`
-   instead of `172.18.0.2`, and that the UC200 Pro stops sending 403.
+   `192.168.0.201` in this setup) to `[transport-udp]`. **First attempt at
+   `local_net` was wrong**: setting it to `172.16.0.0/12` +
+   `192.168.0.0/16` made Asterisk classify the UC200 Pro (`192.168.0.110`,
+   inside that /16) as "local," which made it skip the external-address
+   rewrite entirely for calls to it — confirmed live: the Docker bridge IP
+   (`172.18.0.2`) kept leaking into the Contact/SDP even with
+   `external_signaling_address`/`external_media_address` set and verified
+   loaded via `pjsip show transport transport-udp`. `local_net` must only
+   cover the network Asterisk's own container interface sits on (the Docker
+   bridge, `172.16.0.0/12`), not the host LAN — anything reached through the
+   container's NAT, including same-LAN devices like the UC200 Pro, is
+   external from Asterisk's point of view. Fixed by dropping the
+   `192.168.0.0/16` line. **Not yet re-verified against a live call** —
+   next step: retest 201→203 and confirm the INVITE's Contact/SDP now show
+   `192.168.0.201` instead of `172.18.0.2`, and that the UC200 Pro stops
+   sending 403.
 7. **WebSocket "Not connected" mid-call / on REGISTER refresh** — SIP.js had
    no `keepAliveInterval`, so the idle WSS connection between the browser and
    the gateway was being silently dropped (no close frame received) after
