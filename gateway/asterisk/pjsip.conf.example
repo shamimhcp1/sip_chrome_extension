@@ -36,7 +36,7 @@ webrtc=yes
 dtls_auto_generate_cert=yes
 rtcp_mux=yes
 auth=browser-ext-auth
-aors=browser-ext-aor
+aors=browser-ext
 
 [browser-ext-auth]
 type=auth
@@ -44,7 +44,10 @@ auth_type=userpass
 username=browser-ext
 password=CHANGE_ME_BROWSER_PASSWORD
 
-[browser-ext-aor]
+; AOR object name must match the endpoint/account name exactly — Asterisk's
+; registrar looks up the AOR by that name, not by any alias. Reusing
+; "browser-ext" here (not "browser-ext-aor") is required, not cosmetic.
+[browser-ext]
 type=aor
 max_contacts=1
 
