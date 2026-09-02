@@ -2,6 +2,7 @@
 // where the live SIP registration / RTCPeerConnection will live (M1+) since
 // service workers can't hold those across the popup closing.
 
+import { getAccount, saveAccount } from "../lib/account";
 import type { ExtensionMessage } from "../lib/messaging";
 
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
@@ -39,6 +40,14 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
   }
   if (message.type === "ping") {
     sendResponse({ type: "pong" } satisfies ExtensionMessage);
+    return true;
+  }
+  if (message.type === "bg-get-account") {
+    void getAccount().then((account) => sendResponse({ account }));
+    return true;
+  }
+  if (message.type === "bg-save-account") {
+    void saveAccount(message.account).then(() => sendResponse({ ok: true }));
     return true;
   }
   return false;

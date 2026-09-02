@@ -2,9 +2,21 @@
 // RTCPeerConnection) for the extension's whole lifetime, independent of
 // whether the popup is open.
 
-import { getAccount, saveAccount } from "../lib/account";
+import type { SipAccountConfig } from "../lib/account";
 import { sendMessage, type ExtensionMessage, type AckResponse } from "../lib/messaging";
 import { SipClient } from "./sip-client";
+
+// Offscreen documents don't reliably get direct chrome.storage access (a
+// known Chrome limitation), so account storage goes through the background
+// service worker instead, which always has full API access.
+async function bgGetAccount(): Promise<SipAccountConfig | null> {
+  const response = (await sendMessage({ type: "bg-get-account" })) as { account: SipAccountConfig | null };
+  return response.account;
+}
+
+async function bgSaveAccount(account: SipAccountConfig): Promise<void> {
+  await sendMessage({ type: "bg-save-account", account });
+}
 
 // SIP.js's internal transport keeps retrying a failed WSS connection in
 // the background and can reject those retry promises without anything in
@@ -26,7 +38,7 @@ client.onStateChange((state) => {
 });
 
 async function autoRegister(): Promise<void> {
-  const account = await getAccount();
+  const account = await bgGetAccount();
   if (!account) return;
   await client.register(account);
 }
@@ -40,7 +52,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
   switch (message.type) {
     case "account-register":
       void (async () => {
-        await saveAccount(message.account);
+        await bgSaveAccount(message.account);
         try {
           await client.register(message.account);
           respond({ ok: true });

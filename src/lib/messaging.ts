@@ -16,7 +16,13 @@ export type ExtensionMessage =
   | { type: "call-reject" }
   | { type: "call-hangup" }
   | { type: "get-state" }
-  | { type: "state-changed"; state: StateSnapshot };
+  | { type: "state-changed"; state: StateSnapshot }
+  // Internal: offscreen -> background storage proxy. Offscreen documents
+  // don't reliably get direct chrome.storage access (a known Chrome
+  // limitation), so storage reads/writes for the account route through
+  // the background service worker instead, which always has full API access.
+  | { type: "bg-get-account" }
+  | { type: "bg-save-account"; account: SipAccountConfig };
 
 export interface AckResponse {
   ok: boolean;
