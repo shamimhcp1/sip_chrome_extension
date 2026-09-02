@@ -30,12 +30,20 @@ bind=0.0.0.0:5060
 ; immediately rejected the call with 403 Forbidden. external_signaling_address
 ; makes Asterisk rewrite Contact/Via to the host's real LAN IP for anything
 ; outside local_net; external_media_address does the same for the SDP.
-; Replace 192.168.0.201 with whatever LAN IP this gateway host actually has,
-; and adjust local_net if your Docker/LAN subnet differs.
+; Replace 192.168.0.201 with whatever LAN IP this gateway host actually has.
 external_signaling_address=192.168.0.201
 external_media_address=192.168.0.201
+; local_net must list ONLY the network(s) Asterisk's own interface sits on
+; (the Docker bridge network) — NOT the host LAN. Confirmed live: adding
+; 192.168.0.0/16 here made Asterisk treat the UC200 Pro (192.168.0.110) as
+; "local" and skip the external_signaling_address/external_media_address
+; rewrite entirely for calls to it, so the Docker-internal IP kept leaking
+; despite external_*_address being set correctly. From Asterisk's own
+; interface (inside the container), the UC200 Pro is NOT local — it's only
+; reachable via the host's NAT/port-forwarding — so it must NOT be in
+; local_net. Adjust the subnet below if your Docker bridge network differs
+; (check with `docker network inspect` if unsure).
 local_net=172.16.0.0/12
-local_net=192.168.0.0/16
 
 ; ---- Browser-facing endpoint (what the extension registers as) ----
 
