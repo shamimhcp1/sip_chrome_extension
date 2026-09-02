@@ -5,7 +5,14 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     volumes:
-      - ./asterisk:/etc/asterisk:ro
+      # Mount only the files we customized — mounting the whole
+      # /etc/asterisk directory would replace the image's default configs
+      # (asterisk.conf, modules.conf, logger.conf, stasis.conf, etc.),
+      # which Asterisk needs just to boot.
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/http.conf:/etc/asterisk/http.conf:ro
+      - ./asterisk/rtp.conf:/etc/asterisk/rtp.conf:ro
     ports:
       # SIP-over-WebSocket for the Chrome extension. Reverse-proxy this
       # (Traefik/nginx) to add TLS -> wss://; do not expose 8088 directly
