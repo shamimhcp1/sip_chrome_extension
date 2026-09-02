@@ -82,15 +82,6 @@ allow=ulaw
 allow=alaw
 outbound_auth=uc200-auth
 aors=uc200-aor
-; Without this, Asterisk's outbound REGISTER to the UC200 Pro uses an
-; auto-generated random Contact user (same pattern as the browser side's
-; auto contact). The UC200 Pro then routes inbound calls to 201 back to
-; that random user, and Asterisk can't match it to any dialplan extension
-; — confirmed live: "Call ... rejected because extension not found in
-; context 'from-uc200'" trying extension 's' (Asterisk's fallback for an
-; unrecognized/empty Request-URI user). Pin it to 201 so inbound calls
-; route correctly.
-contact_user=201
 ; Without these, outbound INVITEs keep the original caller's From header
 ; (sip:browser-ext@<gateway-ip>) instead of extension 201's identity.
 ; Confirmed live: the UC200 Pro rejects that with "403 Forbidden" — it only
@@ -110,3 +101,12 @@ outbound_auth=uc200-auth
 server_uri=sip:192.168.0.110
 client_uri=sip:201@192.168.0.110
 retry_interval=60
+; contact_user belongs here (type=registration), not on the [uc200] endpoint
+; — the endpoint has no bearing on the outbound REGISTER's Contact header.
+; Confirmed live: `pjsip show registration uc200-registration` lists
+; contact_user as a parameter of the registration object itself, and it was
+; sitting blank even after being set on the endpoint — so the UC200 Pro kept
+; getting a random Contact user and routed inbound calls to 201 nowhere,
+; failing dialplan lookup with "extension not found in context 'from-uc200'"
+; trying 's'. Pin it here so inbound calls route to extension 201 correctly.
+contact_user=201
