@@ -1,8 +1,81 @@
-// Offscreen document: will host the SIP.js UserAgent, registration, and
-// active RTCPeerConnection from M1 onward. For M0 this just proves the
-// document loads and can talk back to the background service worker.
+// Offscreen document: hosts the SipClient (UserAgent, registration, active
+// RTCPeerConnection) for the extension's whole lifetime, independent of
+// whether the popup is open.
 
-import { sendMessage } from "../lib/messaging";
+import { getAccount, saveAccount } from "../lib/account";
+import { sendMessage, type ExtensionMessage, type AckResponse } from "../lib/messaging";
+import { SipClient } from "./sip-client";
 
-void sendMessage({ type: "offscreen-ready" });
+const client = new SipClient();
+
+client.onStateChange((state) => {
+  void sendMessage({ type: "state-changed", state }).catch(() => {
+    // No listener open (popup closed) — fine, popup re-fetches with
+    // "get-state" the next time it opens.
+  });
+});
+
+async function autoRegister(): Promise<void> {
+  const account = await getAccount();
+  if (!account) return;
+  try {
+    await client.register(account);
+  } catch (error) {
+    console.error("[offscreen] auto-register failed", error);
+  }
+}
+void autoRegister();
+
+chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
+  const respond = (response: AckResponse) => sendResponse(response);
+
+  switch (message.type) {
+    case "account-register":
+      void (async () => {
+        await saveAccount(message.account);
+        try {
+          await client.register(message.account);
+          respond({ ok: true });
+        } catch (error) {
+          respond({ ok: false, error: String(error) });
+        }
+      })();
+      return true;
+
+    case "account-unregister":
+      void client.unregister().then(() => respond({ ok: true }));
+      return true;
+
+    case "call-dial":
+      void client
+        .dial(message.target)
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
+      return true;
+
+    case "call-answer":
+      void client
+        .answer()
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
+      return true;
+
+    case "call-reject":
+      void client.reject().then(() => respond({ ok: true }));
+      return true;
+
+    case "call-hangup":
+      void client.hangup().then(() => respond({ ok: true }));
+      return true;
+
+    case "get-state":
+      sendResponse({ state: client.getState() });
+      return false;
+
+    default:
+      return false;
+  }
+});
+
+void sendMessage({ type: "offscreen-ready" }).catch(() => {});
 console.log("[offscreen] loaded");

@@ -5,25 +5,119 @@
     <title>SIP Phone</title>
     <style>
       body {
-        width: 260px;
+        width: 280px;
         font-family: system-ui, sans-serif;
         margin: 0;
-        padding: 16px;
+        padding: 12px;
+        font-size: 12px;
+        color: #222;
       }
       h1 {
         font-size: 14px;
-        margin: 0 0 8px;
+        margin: 0 0 10px;
       }
-      p {
+      section {
+        border-top: 1px solid #e2e2e2;
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+      section:first-of-type {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 6px;
+      }
+      label span {
+        display: block;
+        color: #666;
+        margin-bottom: 2px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 4px 6px;
         font-size: 12px;
-        color: #555;
-        margin: 0;
+      }
+      .row {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      button {
+        flex: 1;
+        padding: 6px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      #reg-status {
+        font-weight: 600;
+      }
+      #reg-status.registered {
+        color: #1a7f37;
+      }
+      #reg-status.failed {
+        color: #b3261e;
+      }
+      #call-status {
+        margin: 6px 0;
+      }
+      #account-error {
+        color: #b3261e;
+        margin-top: 6px;
+        word-break: break-word;
       }
     </style>
   </head>
   <body>
     <h1>SIP Phone</h1>
-    <p id="status">Scaffold running (M0) — no account configured yet.</p>
+
+    <section id="account-section">
+      <label>
+        <span>SIP URI (e.g. 1001@pbx.example.com)</span>
+        <input id="uri" type="text" autocomplete="off" />
+      </label>
+      <label>
+        <span>Password</span>
+        <input id="password" type="password" autocomplete="off" />
+      </label>
+      <label>
+        <span>WSS server (e.g. wss://pbx.example.com:8089/ws)</span>
+        <input id="wssServer" type="text" autocomplete="off" />
+      </label>
+      <label>
+        <span>Display name (optional)</span>
+        <input id="displayName" type="text" autocomplete="off" />
+      </label>
+      <div class="row">
+        <button id="save-register">Save &amp; Register</button>
+        <button id="unregister">Unregister</button>
+      </div>
+      <div class="row">
+        <button id="request-mic">Enable microphone</button>
+      </div>
+      <p>Status: <span id="reg-status">unregistered</span></p>
+      <p id="account-error"></p>
+    </section>
+
+    <section id="dialer-section">
+      <label>
+        <span>Call target</span>
+        <input id="target" type="text" autocomplete="off" placeholder="1002 or 1002@pbx.example.com" />
+      </label>
+      <div class="row">
+        <button id="call">Call</button>
+        <button id="hangup">Hangup</button>
+      </div>
+      <div class="row" id="incoming-row" hidden>
+        <button id="answer">Answer</button>
+        <button id="reject">Reject</button>
+      </div>
+      <p id="call-status">No active call</p>
+    </section>
+
     <script type="module" src="/src/popup/main.ts"></script>
   </body>
 </html>

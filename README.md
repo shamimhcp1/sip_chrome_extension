@@ -23,5 +23,19 @@ npm run typecheck
 ## Status
 
 **M0 — scaffold**: MV3 manifest, popup, background service worker, and
-offscreen document wired up with a basic ping/pong message round-trip. No
-SIP functionality yet — that starts at M1.
+offscreen document wired up with a basic ping/pong message round-trip.
+
+**M1 — single account, basic calling**: SIP.js integrated in the offscreen
+document (`src/offscreen/sip-client.ts`). Popup has an account form (SIP
+URI, password, WSS server, display name) that registers via
+`account-register`, a dial pad, and answer/reject/hangup controls. Account
+config persists in `chrome.storage.local` and auto-registers when the
+offscreen document (re)loads.
+
+Before testing a call, click **Enable microphone** once in the popup — the
+offscreen document has no UI to show the browser's mic permission prompt,
+so that grant has to come from a visible extension page first (it then
+applies to the whole extension origin).
+
+Not yet implemented: hold/mute/DTMF/transfer, call history, contacts,
+multiple accounts (all M2+).
