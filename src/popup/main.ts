@@ -72,15 +72,13 @@ el<HTMLButtonElement>("unregister").addEventListener("click", () => {
   void sendMessage({ type: "account-unregister" });
 });
 
-el<HTMLButtonElement>("request-mic").addEventListener("click", async () => {
-  accountError.textContent = "";
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    for (const track of stream.getTracks()) track.stop();
-    accountError.textContent = "Microphone access granted.";
-  } catch (error) {
-    accountError.textContent = `Microphone permission denied: ${String(error)}`;
-  }
+el<HTMLButtonElement>("request-mic").addEventListener("click", () => {
+  // Requesting getUserMedia directly from the popup fails with
+  // "Permission dismissed" — the popup closes the instant Chrome's
+  // permission prompt steals focus, cancelling it. Doing this from a
+  // regular tab instead avoids that; the grant then applies to the whole
+  // extension origin, offscreen document included.
+  chrome.tabs.create({ url: chrome.runtime.getURL("mic-permission.html") });
 });
 
 el<HTMLButtonElement>("call").addEventListener("click", async () => {

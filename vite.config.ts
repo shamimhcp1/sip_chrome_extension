@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         popup: resolve(import.meta.dirname, "popup.html"),
         offscreen: resolve(import.meta.dirname, "offscreen.html"),
+        micPermission: resolve(import.meta.dirname, "mic-permission.html"),
         background: resolve(import.meta.dirname, "src/background/main.ts"),
       },
       output: {

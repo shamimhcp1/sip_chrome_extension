@@ -28,13 +28,11 @@ client.onStateChange((state) => {
 async function autoRegister(): Promise<void> {
   const account = await getAccount();
   if (!account) return;
-  try {
-    await client.register(account);
-  } catch (error) {
-    console.error("[offscreen] auto-register failed", error);
-  }
+  await client.register(account);
 }
-void autoRegister();
+autoRegister().catch((error) => {
+  console.error("[offscreen] auto-register failed", error);
+});
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
   const respond = (response: AckResponse) => sendResponse(response);
