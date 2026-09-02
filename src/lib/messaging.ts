@@ -3,6 +3,7 @@
 // page with an onMessage listener — no explicit routing needed.
 
 import type { SipAccountConfig } from "./account";
+import type { CallHistoryEntry } from "./call-history";
 import type { StateSnapshot } from "./sip-state";
 
 export type ExtensionMessage =
@@ -15,6 +16,13 @@ export type ExtensionMessage =
   | { type: "call-answer" }
   | { type: "call-reject" }
   | { type: "call-hangup" }
+  | { type: "call-set-mute"; muted: boolean }
+  | { type: "call-set-hold"; held: boolean }
+  | { type: "call-dtmf"; tone: string }
+  | { type: "call-transfer-blind"; target: string }
+  | { type: "call-transfer-attended-start"; target: string }
+  | { type: "call-transfer-attended-complete" }
+  | { type: "call-transfer-attended-cancel" }
   | { type: "get-state" }
   | { type: "state-changed"; state: StateSnapshot }
   // Internal: offscreen -> background storage proxy. Offscreen documents
@@ -22,7 +30,8 @@ export type ExtensionMessage =
   // limitation), so storage reads/writes for the account route through
   // the background service worker instead, which always has full API access.
   | { type: "bg-get-account" }
-  | { type: "bg-save-account"; account: SipAccountConfig };
+  | { type: "bg-save-account"; account: SipAccountConfig }
+  | { type: "bg-add-call-history-entry"; entry: CallHistoryEntry };
 
 export interface AckResponse {
   ok: boolean;

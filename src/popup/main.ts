@@ -1,4 +1,5 @@
 import { getAccount, type SipAccountConfig } from "../lib/account";
+import { clearCallHistory, getCallHistory, type CallHistoryEntry } from "../lib/call-history";
 import { sendMessage, type AckResponse, type ExtensionMessage } from "../lib/messaging";
 import type { StateSnapshot } from "../lib/sip-state";
 
@@ -15,6 +16,20 @@ const regStatus = el<HTMLSpanElement>("reg-status");
 const targetInput = el<HTMLInputElement>("target");
 const callStatus = el<HTMLParagraphElement>("call-status");
 const incomingRow = el<HTMLDivElement>("incoming-row");
+
+const muteBtn = el<HTMLButtonElement>("mute");
+const holdBtn = el<HTMLButtonElement>("hold");
+const dtmfGrid = el<HTMLDivElement>("dtmf-grid");
+const transferTargetInput = el<HTMLInputElement>("transfer-target");
+const blindTransferBtn = el<HTMLButtonElement>("blind-transfer");
+const attendedTransferStartBtn = el<HTMLButtonElement>("attended-transfer-start");
+const attendedTransferRow = el<HTMLDivElement>("attended-transfer-row");
+const attendedTransferCompleteBtn = el<HTMLButtonElement>("attended-transfer-complete");
+const attendedTransferCancelBtn = el<HTMLButtonElement>("attended-transfer-cancel");
+const attendedTransferStatus = el<HTMLParagraphElement>("attended-transfer-status");
+const historyList = el<HTMLUListElement>("history-list");
+
+let currentState: StateSnapshot = { registration: "unregistered", call: null };
 
 function readAccountForm(): SipAccountConfig {
   return {
@@ -34,18 +49,62 @@ function fillAccountForm(account: SipAccountConfig): void {
   authUsernameInput.value = account.authorizationUsername ?? "";
 }
 
+function setControlsEnabled(enabled: boolean): void {
+  muteBtn.disabled = !enabled;
+  holdBtn.disabled = !enabled;
+  for (const button of dtmfGrid.querySelectorAll<HTMLButtonElement>(".dtmf-key")) button.disabled = !enabled;
+  blindTransferBtn.disabled = !enabled;
+  attendedTransferStartBtn.disabled = !enabled || !!currentState.call?.attendedTransfer;
+}
+
 function renderState(state: StateSnapshot): void {
+  currentState = state;
   regStatus.textContent = state.registration;
   regStatus.className = state.registration;
 
-  if (!state.call) {
+  const call = state.call;
+  if (!call) {
     callStatus.textContent = "No active call";
     incomingRow.hidden = true;
+    attendedTransferRow.hidden = true;
+    attendedTransferStatus.textContent = "";
+    setControlsEnabled(false);
     return;
   }
 
-  incomingRow.hidden = state.call.direction !== "incoming" || state.call.state !== "ringing";
-  callStatus.textContent = `${state.call.direction} call — ${state.call.state} — ${state.call.remoteIdentity}`;
+  incomingRow.hidden = call.direction !== "incoming" || call.state !== "ringing";
+
+  const badges = [call.muted ? "muted" : null, call.held ? "held" : null].filter(Boolean).join(", ");
+  callStatus.textContent = `${call.direction} call — ${call.state}${badges ? ` (${badges})` : ""} — ${call.remoteIdentity}`;
+
+  muteBtn.textContent = call.muted ? "Unmute" : "Mute";
+  holdBtn.textContent = call.held ? "Resume" : "Hold";
+  setControlsEnabled(call.state === "established");
+
+  if (call.attendedTransfer) {
+    attendedTransferRow.hidden = false;
+    attendedTransferCompleteBtn.disabled = call.attendedTransfer.state !== "established";
+    attendedTransferStatus.textContent = `Consulting ${call.attendedTransfer.remoteIdentity} — ${call.attendedTransfer.state}`;
+  } else {
+    attendedTransferRow.hidden = true;
+    attendedTransferStatus.textContent = "";
+  }
+}
+
+function formatHistoryEntry(entry: CallHistoryEntry): string {
+  const time = new Date(entry.startedAt).toLocaleString();
+  const arrow = entry.direction === "incoming" ? "←" : "→";
+  return `${arrow} ${entry.remoteIdentity} · ${entry.outcome} · ${time}`;
+}
+
+async function renderHistory(): Promise<void> {
+  const entries = await getCallHistory();
+  historyList.innerHTML = "";
+  for (const entry of entries.slice(0, 20)) {
+    const li = document.createElement("li");
+    li.textContent = formatHistoryEntry(entry);
+    historyList.appendChild(li);
+  }
 }
 
 async function refreshState(): Promise<void> {
@@ -54,7 +113,11 @@ async function refreshState(): Promise<void> {
 }
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
-  if (message.type === "state-changed") renderState(message.state);
+  if (message.type === "state-changed") {
+    const hadCall = !!currentState.call;
+    renderState(message.state);
+    if (hadCall && !message.state.call) void renderHistory();
+  }
 });
 
 el<HTMLButtonElement>("save-register").addEventListener("click", async () => {
@@ -100,8 +163,55 @@ el<HTMLButtonElement>("reject").addEventListener("click", () => {
   void sendMessage({ type: "call-reject" });
 });
 
+muteBtn.addEventListener("click", () => {
+  const muted = !(currentState.call?.muted ?? false);
+  void sendMessage({ type: "call-set-mute", muted });
+});
+
+holdBtn.addEventListener("click", async () => {
+  const held = !(currentState.call?.held ?? false);
+  const response = (await sendMessage({ type: "call-set-hold", held })) as AckResponse;
+  if (!response.ok) callStatus.textContent = `Hold failed: ${response.error ?? ""}`;
+});
+
+for (const button of dtmfGrid.querySelectorAll<HTMLButtonElement>(".dtmf-key")) {
+  button.addEventListener("click", () => {
+    const tone = button.dataset.tone;
+    if (tone) void sendMessage({ type: "call-dtmf", tone });
+  });
+}
+
+blindTransferBtn.addEventListener("click", async () => {
+  const target = transferTargetInput.value.trim();
+  if (!target) return;
+  const response = (await sendMessage({ type: "call-transfer-blind", target })) as AckResponse;
+  if (!response.ok) callStatus.textContent = `Transfer failed: ${response.error ?? ""}`;
+});
+
+attendedTransferStartBtn.addEventListener("click", async () => {
+  const target = transferTargetInput.value.trim();
+  if (!target) return;
+  const response = (await sendMessage({ type: "call-transfer-attended-start", target })) as AckResponse;
+  if (!response.ok) callStatus.textContent = `Attended transfer failed: ${response.error ?? ""}`;
+});
+
+attendedTransferCompleteBtn.addEventListener("click", async () => {
+  const response = (await sendMessage({ type: "call-transfer-attended-complete" })) as AckResponse;
+  if (!response.ok) callStatus.textContent = `Complete transfer failed: ${response.error ?? ""}`;
+});
+
+attendedTransferCancelBtn.addEventListener("click", () => {
+  void sendMessage({ type: "call-transfer-attended-cancel" });
+});
+
+el<HTMLButtonElement>("history-clear").addEventListener("click", async () => {
+  await clearCallHistory();
+  await renderHistory();
+});
+
 void (async () => {
   const account = await getAccount();
   if (account) fillAccountForm(account);
   await refreshState();
+  await renderHistory();
 })();

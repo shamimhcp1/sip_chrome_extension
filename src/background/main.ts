@@ -13,6 +13,7 @@
 // answer a call.
 
 import { getAccount, saveAccount } from "../lib/account";
+import { addCallHistoryEntry } from "../lib/call-history";
 import type { ExtensionMessage } from "../lib/messaging";
 import type { StateSnapshot } from "../lib/sip-state";
 
@@ -102,6 +103,10 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
   }
   if (message.type === "bg-save-account") {
     void saveAccount(message.account).then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (message.type === "bg-add-call-history-entry") {
+    void addCallHistoryEntry(message.entry).then(() => sendResponse({ ok: true }));
     return true;
   }
   if (message.type === "state-changed") {

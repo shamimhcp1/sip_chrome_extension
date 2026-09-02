@@ -5,10 +5,19 @@ export type RegistrationState = "unregistered" | "registering" | "registered" | 
 export type CallDirection = "incoming" | "outgoing";
 export type CallPhase = "ringing" | "connecting" | "established";
 
+export interface AttendedTransferSnapshot {
+  remoteIdentity: string;
+  state: CallPhase;
+}
+
 export interface CallSnapshot {
   direction: CallDirection;
   state: CallPhase;
   remoteIdentity: string;
+  muted: boolean;
+  held: boolean;
+  /** Set while a second, consultation call for an attended transfer is in progress. */
+  attendedTransfer: AttendedTransferSnapshot | null;
 }
 
 export interface StateSnapshot {

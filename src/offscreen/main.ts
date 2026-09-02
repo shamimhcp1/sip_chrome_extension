@@ -37,6 +37,10 @@ client.onStateChange((state) => {
   });
 });
 
+client.onCallEnded((entry) => {
+  void sendMessage({ type: "bg-add-call-history-entry", entry }).catch(() => {});
+});
+
 async function autoRegister(): Promise<void> {
   const account = await bgGetAccount();
   if (!account) return;
@@ -86,6 +90,55 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
 
     case "call-hangup":
       void client.hangup().then(() => respond({ ok: true }));
+      return true;
+
+    case "call-set-mute":
+      client.setMute(message.muted);
+      respond({ ok: true });
+      return false;
+
+    case "call-set-hold":
+      void client
+        .setHold(message.held)
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
+      return true;
+
+    case "call-dtmf":
+      try {
+        client.sendDtmf(message.tone);
+        respond({ ok: true });
+      } catch (error) {
+        respond({ ok: false, error: String(error) });
+      }
+      return false;
+
+    case "call-transfer-blind":
+      void client
+        .blindTransfer(message.target)
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
+      return true;
+
+    case "call-transfer-attended-start":
+      void client
+        .startAttendedTransfer(message.target)
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
+      return true;
+
+    case "call-transfer-attended-complete":
+      void client
+        .completeAttendedTransfer()
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
+      return true;
+
+    case "call-transfer-attended-cancel":
+      void client
+        .cancelAttendedTransfer()
+        .then(() => respond({ ok: true }))
+        .catch((error) => respond({ ok: false, error: String(error) }));
       return true;
 
     case "get-state":
