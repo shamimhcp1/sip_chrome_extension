@@ -1,0 +1,3 @@
+asterisk/*.conf
+!asterisk/*.conf.example
+.env

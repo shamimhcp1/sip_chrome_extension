@@ -1,0 +1,22 @@
+{
+  "name": "sip-chrome-extension",
+  "version": "0.2.0",
+  "description": "MicroSIP-inspired SIP softphone as a Chrome extension (WebRTC + SIP-over-WSS)",
+  "type": "module",
+  "scripts": {
+    "dev": "node init && vite build --watch",
+    "build": "node init && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.280",
+    "@types/node": "^22.10.1",
+    "typescript": "^5.6.3",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "node-fetch": "^3.3.2",
+    "sip.js": "^0.21.2"
+  }
+}
