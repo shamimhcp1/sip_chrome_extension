@@ -8,6 +8,7 @@ const uriInput = el<HTMLInputElement>("uri");
 const passwordInput = el<HTMLInputElement>("password");
 const wssServerInput = el<HTMLInputElement>("wssServer");
 const displayNameInput = el<HTMLInputElement>("displayName");
+const authUsernameInput = el<HTMLInputElement>("authUsername");
 const accountError = el<HTMLParagraphElement>("account-error");
 const regStatus = el<HTMLSpanElement>("reg-status");
 
@@ -21,6 +22,7 @@ function readAccountForm(): SipAccountConfig {
     password: passwordInput.value,
     wssServer: wssServerInput.value.trim(),
     displayName: displayNameInput.value.trim() || undefined,
+    authorizationUsername: authUsernameInput.value.trim() || undefined,
   };
 }
 
@@ -29,6 +31,7 @@ function fillAccountForm(account: SipAccountConfig): void {
   passwordInput.value = account.password;
   wssServerInput.value = account.wssServer;
   displayNameInput.value = account.displayName ?? "";
+  authUsernameInput.value = account.authorizationUsername ?? "";
 }
 
 function renderState(state: StateSnapshot): void {
