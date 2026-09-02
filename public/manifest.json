@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "SIP Phone",
+  "version": "0.1.0",
+  "description": "SIP softphone extension (WebRTC + SIP-over-WSS), MicroSIP-inspired.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "offscreen", "notifications"]
+}
