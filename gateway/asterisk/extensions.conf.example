@@ -1,0 +1,17 @@
+; Minimal bridging dialplan between the browser extension and the UC200
+; Pro's extension 201. Copy to extensions.conf.
+
+[from-browser]
+; Anything the extension dials goes out through the uc200 trunk as-is
+; (the UC200 Pro's own dial plan/routing decides what happens next —
+; internal extension, or out via its ICC trunk for external numbers).
+exten => _X.,1,NoOp(Browser extension dialing ${EXTEN})
+ same => n,Dial(PJSIP/${EXTEN}@uc200,30)
+ same => n,Hangup()
+
+[from-uc200]
+; Inbound calls to 201 (from the UC200 Pro, including calls routed in from
+; its ICC trunk) ring the browser extension.
+exten => 201,1,NoOp(Inbound call to 201 from UC200 Pro)
+ same => n,Dial(PJSIP/browser-ext,30)
+ same => n,Hangup()

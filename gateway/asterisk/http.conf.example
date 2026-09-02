@@ -1,0 +1,9 @@
+; Asterisk's built-in HTTP server, which serves the SIP-over-WebSocket
+; endpoint at /ws (via res_http_websocket + res_pjsip_transport_websocket).
+; TLS is terminated externally (Traefik) — this stays plain HTTP inside the
+; container/LAN.
+
+[general]
+enabled=yes
+bindaddr=0.0.0.0
+bindport=8088

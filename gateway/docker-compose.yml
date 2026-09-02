@@ -1,0 +1,36 @@
+services:
+  asterisk:
+    image: andrius/asterisk:20
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-UTC}
+    volumes:
+      # Mount only the files we customized — mounting the whole
+      # /etc/asterisk directory would replace the image's default configs
+      # (asterisk.conf, modules.conf, logger.conf, stasis.conf, etc.),
+      # which Asterisk needs just to boot.
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/http.conf:/etc/asterisk/http.conf:ro
+      - ./asterisk/rtp.conf:/etc/asterisk/rtp.conf:ro
+    ports:
+      # SIP-over-WebSocket for the Chrome extension. Reverse-proxy this
+      # (Traefik/nginx) to add TLS -> wss://; do not expose 8088 directly
+      # to the internet as plain ws://.
+      - "8088:8088/tcp"
+      # UDP trunk to the Dinstar UC200 Pro. Must be reachable on the same
+      # LAN/VPN as the PBX (see gateway/README.md) — this is NOT meant to
+      # be exposed to the public internet.
+      - "5060:5060/udp"
+      # RTP media range.
+      - "10000-10200:10000-10200/udp"
+    labels:
+      # Example Traefik labels for terminating TLS and proxying WS -> the
+      # container's plain :8088. Adjust host/network/entrypoint names to
+      # match your Coolify/Traefik setup, or remove if you front this with
+      # something else.
+      - "traefik.enable=true"
+      - "traefik.http.routers.sip-gateway.rule=Host(`${GATEWAY_DOMAIN}`)"
+      - "traefik.http.routers.sip-gateway.entrypoints=websecure"
+      - "traefik.http.routers.sip-gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sip-gateway.loadbalancer.server.port=8088"
