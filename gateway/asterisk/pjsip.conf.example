@@ -82,6 +82,12 @@ allow=ulaw
 allow=alaw
 outbound_auth=uc200-auth
 aors=uc200-aor
+; Without these, outbound INVITEs keep the original caller's From header
+; (sip:browser-ext@<gateway-ip>) instead of extension 201's identity.
+; Confirmed live: the UC200 Pro rejects that with "403 Forbidden" — it only
+; accepts calls that claim to come from the extension it has registered.
+from_user=201
+from_domain=192.168.0.110
 
 [uc200-identify]
 type=identify
