@@ -36,7 +36,7 @@ webrtc=yes
 dtls_auto_generate_cert=yes
 rtcp_mux=yes
 auth=browser-ext-auth
-aors=browser-ext-aor
+aors=browser-ext
 
 [browser-ext-auth]
 type=auth
@@ -44,7 +44,17 @@ auth_type=userpass
 username=browser-ext
 password=CHANGE_ME_BROWSER_PASSWORD
 
-[browser-ext-aor]
+; Confirmed against a live Asterisk instance: the AOR name must equal the
+; account name in the REGISTER's To-header (here, "browser-ext") — Asterisk's
+; registrar looks up the AOR by that exact identity, not merely by whatever
+; name is listed in the endpoint's aors= field. A differently-named AOR
+; (e.g. "browser-ext-aor") fails registration with
+; "find_registrar_aor: AOR '' not found for endpoint ..." even though the
+; endpoint and AOR both load correctly and auth succeeds. Reusing the same
+; section name "browser-ext" for both type=endpoint and type=aor (as done
+; here) is safe — verified via `pjsip show endpoint` / `pjsip show aor`
+; that both load with the expected fields, no config-parsing conflict.
+[browser-ext]
 type=aor
 max_contacts=1
 
