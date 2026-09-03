@@ -4,196 +4,1262 @@
     <meta charset="utf-8" />
     <title>SIP Phone</title>
     <style>
+      :root {
+        --bg-canvas: #0b0f14;
+        --bg-surface: #141a22;
+        --bg-surface-raised: #1b222c;
+        --bg-inset: #10151c;
+        --border-subtle: #232b36;
+        --text-primary: #f5f7fa;
+        --text-secondary: #9aa5b1;
+        --text-tertiary: #5b6572;
+        --accent-400: #7da0ff;
+        --accent-500: #4f7dfb;
+        --accent-600: #3b63e0;
+        --accent-subtle-bg: #1b2a4d;
+        --ringing: #f59e0b;
+        --established: #22c55e;
+        --held: #38bdf8;
+        --muted-c: #fb7185;
+        --error: #dc2626;
+        --r-sm: 6px;
+        --r-md: 10px;
+        --r-lg: 14px;
+        --r-full: 999px;
+      }
+      * {
+        box-sizing: border-box;
+      }
       body {
-        width: 280px;
-        font-family: system-ui, sans-serif;
+        width: 400px;
         margin: 0;
-        padding: 12px;
-        font-size: 12px;
-        color: #222;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-size: 13px;
+        color: var(--text-primary);
+        background: var(--bg-canvas);
       }
-      h1 {
-        font-size: 14px;
-        margin: 0 0 10px;
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        color: inherit;
+        background: none;
       }
-      section {
-        border-top: 1px solid #e2e2e2;
-        padding-top: 10px;
-        margin-top: 10px;
-      }
-      section:first-of-type {
-        border-top: none;
-        padding-top: 0;
-        margin-top: 0;
-      }
-      label {
-        display: block;
-        margin-bottom: 6px;
-      }
-      label span {
-        display: block;
-        color: #666;
-        margin-bottom: 2px;
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
       }
       input {
+        font-family: inherit;
+        color: var(--text-primary);
+      }
+      input::placeholder {
+        color: var(--text-tertiary);
+      }
+      a {
+        color: var(--accent-400);
+      }
+      svg {
+        display: block;
+      }
+
+      .app {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header */
+      .header {
+        height: 52px;
+        flex: 0 0 52px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .logo {
+        width: 24px;
+        height: 24px;
+        border-radius: var(--r-full);
+        background: var(--accent-500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        flex: 0 0 24px;
+      }
+      .logo svg {
+        width: 13px;
+        height: 13px;
+      }
+      .acct-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-full);
+        padding: 5px 10px 5px 8px;
+        font-size: 11px;
+        color: var(--text-secondary);
+        max-width: 190px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .acct-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex: 0 0 7px;
+        background: var(--text-tertiary);
+      }
+      .acct-dot.registered {
+        background: var(--established);
+      }
+      .acct-dot.registering {
+        background: var(--ringing);
+      }
+      .acct-dot.failed {
+        background: var(--error);
+      }
+
+      /* Content / panels */
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        max-height: 462px;
+        padding: 18px 20px;
+      }
+      .panel[hidden] {
+        display: none;
+      }
+      .h2 {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+        margin: 18px 0 4px;
+      }
+      .h2:first-child {
+        margin-top: 0;
+      }
+
+      /* Tab bar */
+      .tabbar {
+        height: 56px;
+        flex: 0 0 56px;
+        display: flex;
+        background: var(--bg-surface);
+        border-top: 1px solid var(--border-subtle);
+      }
+      .tabbar[hidden] {
+        display: none;
+      }
+      .tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: var(--text-tertiary);
+        font-size: 9.5px;
+        font-weight: 500;
+      }
+      .tab svg {
+        width: 19px;
+        height: 19px;
+      }
+      .tab.active {
+        color: var(--accent-400);
+      }
+
+      /* Forms */
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+      .field .opt {
+        color: var(--text-tertiary);
+        font-weight: 400;
+      }
+      .field input {
         width: 100%;
-        box-sizing: border-box;
-        padding: 4px 6px;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 10px 12px;
+        font-size: 13px;
+        outline: none;
+      }
+      .field input:focus {
+        border-color: var(--accent-500);
+        box-shadow: 0 0 0 3px var(--accent-subtle-bg);
+      }
+      .status-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 9px 12px;
+        margin-bottom: 16px;
         font-size: 12px;
+        color: var(--text-secondary);
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-tertiary);
+        flex: 0 0 8px;
+      }
+      .status-dot.registered {
+        background: var(--established);
+      }
+      .status-dot.registering {
+        background: var(--ringing);
+      }
+      .status-dot.failed {
+        background: var(--error);
+      }
+      .link-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px dashed var(--border-subtle);
+        border-radius: var(--r-sm);
+        padding: 10px 12px;
+        color: var(--accent-400);
+        font-size: 12.5px;
+        width: 100%;
+        margin-bottom: 18px;
+      }
+      .link-btn svg {
+        width: 15px;
+        height: 15px;
       }
       .row {
         display: flex;
-        gap: 6px;
-        margin-top: 6px;
+        gap: 10px;
       }
-      button {
+      .btn {
         flex: 1;
-        padding: 6px;
-        font-size: 12px;
-        cursor: pointer;
-      }
-      #reg-status {
+        border-radius: var(--r-sm);
+        padding: 11px 14px;
+        font-size: 13px;
         font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
       }
-      #reg-status.registered {
-        color: #1a7f37;
+      .btn-primary {
+        background: var(--accent-500);
+        color: #fff;
       }
-      #reg-status.failed {
-        color: #b3261e;
+      .btn-secondary {
+        background: var(--bg-inset);
+        color: var(--text-primary);
+        border: 1px solid var(--border-subtle);
       }
-      #call-status {
-        margin: 6px 0;
-      }
-      #account-error {
-        color: #b3261e;
-        margin-top: 6px;
+      .err-text {
+        color: var(--error);
+        font-size: 11.5px;
+        margin: -6px 0 14px;
+        min-height: 1px;
         word-break: break-word;
       }
-      #dtmf-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 4px;
-        margin-top: 6px;
+
+      /* Dialer */
+      .target-wrap {
+        text-align: center;
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
       }
-      #dtmf-grid button {
+      #target {
+        width: 100%;
+        background: none;
+        border: none;
+        outline: none;
+        text-align: center;
+        font-size: 21px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--text-primary);
         padding: 4px;
       }
-      #attended-transfer-status {
-        color: #666;
-        margin: 4px 0 0;
+      #target::placeholder {
+        font-weight: 400;
+        font-size: 13px;
       }
-      #history-list {
-        list-style: none;
-        padding: 0;
-        margin: 6px 0 0;
-        max-height: 120px;
-        overflow-y: auto;
+      .keypad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        justify-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
       }
-      #history-list li {
-        padding: 3px 0;
-        border-bottom: 1px solid #eee;
+      .key {
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
-      #history-list li:last-child {
+      .key .digit {
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1;
+      }
+      .key .letters {
+        font-size: 7.5px;
+        color: var(--text-tertiary);
+        letter-spacing: 0.08em;
+        margin-top: 2px;
+      }
+      .call-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .call-fab {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: var(--established);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+      }
+      .call-fab svg {
+        width: 22px;
+        height: 22px;
+      }
+      .call-fab:disabled {
+        opacity: 0.35;
+        box-shadow: none;
+      }
+
+      /* Coming-soon placeholder (Contacts / Settings — not built yet, M3/M4) */
+      .placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 320px;
+        gap: 14px;
+      }
+      .placeholder .icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-tertiary);
+      }
+      .placeholder .icon svg {
+        width: 24px;
+        height: 24px;
+      }
+      .placeholder .title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .placeholder .desc {
+        font-size: 12px;
+        color: var(--text-secondary);
+        max-width: 260px;
+        line-height: 1.5;
+      }
+
+      /* History */
+      .h-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .h-row:last-child {
         border-bottom: none;
       }
-      button:disabled {
-        opacity: 0.5;
-        cursor: default;
+      .h-dir {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+      }
+      .h-dir svg {
+        width: 14px;
+        height: 14px;
+      }
+      .h-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .h-name {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .h-meta {
+        font-size: 10.5px;
+        color: var(--text-tertiary);
+        margin-top: 1px;
+      }
+      .h-right {
+        text-align: right;
+        flex: 0 0 auto;
+      }
+      .h-time {
+        font-size: 10.5px;
+        color: var(--text-tertiary);
+        margin-bottom: 4px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 9.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 7px;
+        border-radius: 4px;
+      }
+      .tag.answered {
+        background: rgba(34, 197, 94, 0.16);
+        color: var(--established);
+      }
+      .tag.missed {
+        background: rgba(245, 158, 11, 0.16);
+        color: var(--ringing);
+      }
+      .tag.failed {
+        background: rgba(220, 38, 38, 0.16);
+        color: var(--error);
+      }
+      .tag.rejected,
+      .tag.canceled {
+        background: rgba(90, 101, 114, 0.2);
+        color: var(--text-secondary);
+      }
+      .history-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .history-head .h2 {
+        margin: 0;
+      }
+      .clear-btn {
+        font-size: 11px;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-full);
+        padding: 5px 11px;
+      }
+
+      /* Full-bleed call screens */
+      #call-view[hidden] {
+        display: none;
+      }
+      .call-screen {
+        display: flex;
+        flex-direction: column;
+      }
+      .call-screen[hidden] {
+        display: none;
+      }
+      .call-top {
+        padding: 26px 24px 0;
+        text-align: center;
+      }
+      .call-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ringing);
+      }
+      .call-eyebrow .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      #call-connecting .call-eyebrow {
+        color: var(--accent-400);
+      }
+      .call-who {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 24px;
+      }
+      .call-avatar {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+      }
+      .call-avatar svg {
+        width: 36px;
+        height: 36px;
+      }
+      .call-name {
+        font-size: 19px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .call-num {
+        font-size: 12.5px;
+        color: var(--text-secondary);
+      }
+      .call-actions {
+        padding: 24px 32px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .call-actions.single {
+        justify-content: center;
+      }
+      .call-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+      }
+      .call-fab-lg {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+      }
+      .call-fab-lg svg {
+        width: 25px;
+        height: 25px;
+      }
+      .call-fab-lg.reject {
+        background: var(--error);
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35);
+      }
+      .call-fab-lg.answer {
+        background: var(--established);
+        box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35);
+      }
+      .call-action .lbl {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      /* Established call panel */
+      .active-who {
+        text-align: center;
+        margin-bottom: 6px;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+        background: rgba(34, 197, 94, 0.14);
+        color: var(--established);
+      }
+      .status-pill .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .status-pill.held {
+        background: rgba(56, 189, 248, 0.14);
+        color: var(--held);
+      }
+      .active-name {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .active-num {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 18px;
+      }
+      .callbar {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        margin-bottom: 18px;
+      }
+      .ctrl {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .ctrl-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-primary);
+      }
+      .ctrl-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+      .ctrl-btn.on {
+        background: var(--muted-c);
+        border-color: var(--muted-c);
+        color: #2a0d12;
+      }
+      .ctrl-btn.on.held {
+        background: var(--held);
+        color: #04202b;
+      }
+      .ctrl .lbl {
+        font-size: 10.5px;
+        color: var(--text-secondary);
+      }
+      .entry-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 14px;
+      }
+      .entry {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+      .entry svg {
+        width: 15px;
+        height: 15px;
+      }
+      .transfer-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-md);
+        padding: 14px;
+        margin-bottom: 14px;
+      }
+      .transfer-panel[hidden] {
+        display: none;
+      }
+      .transfer-panel .field {
+        margin-bottom: 10px;
+      }
+      .hangup-row {
+        display: flex;
+        justify-content: center;
+        margin-top: auto;
+        padding-top: 8px;
+      }
+      .hangup-fab {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: var(--error);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        box-shadow: 0 8px 20px rgba(220, 38, 38, 0.35);
+      }
+      .hangup-fab svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* DTMF keypad (in-call) */
+      #call-keypad[hidden] {
+        display: none;
+      }
+      .entered {
+        text-align: center;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        min-height: 26px;
+        margin-bottom: 14px;
+        color: var(--accent-400);
+        font-variant-numeric: tabular-nums;
+        word-break: break-all;
+      }
+      .entered .ph {
+        color: var(--text-tertiary);
+        font-weight: 400;
+        font-size: 12px;
+        letter-spacing: 0;
+      }
+
+      /* Attended-transfer consultation panel */
+      #call-consult[hidden] {
+        display: none;
+      }
+      .held-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-md);
+        padding: 12px 14px;
+        margin-bottom: 16px;
+      }
+      .held-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-inset);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        flex: 0 0 32px;
+      }
+      .held-avatar svg {
+        width: 14px;
+        height: 14px;
+      }
+      .held-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .held-name {
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .held-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--held);
+        margin-top: 2px;
+      }
+      .held-badge .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .divider .line {
+        flex: 1;
+        height: 1px;
+        background: var(--border-subtle);
+      }
+      .divider .lbl {
+        font-size: 10.5px;
+        color: var(--text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .consult {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .consult-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        margin: 0 auto 12px;
+      }
+      .consult-avatar svg {
+        width: 27px;
+        height: 27px;
+      }
+      .consult-name {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      .consult-num {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
       }
     </style>
   </head>
   <body>
-    <h1>SIP Phone</h1>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+              />
+            </svg>
+          </div>
+          SIP Phone
+        </div>
+        <div class="acct-chip">
+          <span class="acct-dot" id="acct-dot"></span>
+          <span id="acct-chip-text">No account</span>
+        </div>
+      </header>
 
-    <section id="account-section">
-      <label>
-        <span>SIP URI (e.g. 1001@pbx.example.com)</span>
-        <input id="uri" type="text" autocomplete="off" />
-      </label>
-      <label>
-        <span>Password</span>
-        <input id="password" type="password" autocomplete="off" />
-      </label>
-      <label>
-        <span>WSS server (e.g. wss://pbx.example.com:8089/ws)</span>
-        <input id="wssServer" type="text" autocomplete="off" />
-      </label>
-      <label>
-        <span>Display name (optional)</span>
-        <input id="displayName" type="text" autocomplete="off" />
-      </label>
-      <label>
-        <span>Auth username (optional — only if different from the SIP URI's user part)</span>
-        <input id="authUsername" type="text" autocomplete="off" />
-      </label>
-      <div class="row">
-        <button id="save-register">Save &amp; Register</button>
-        <button id="unregister">Unregister</button>
-      </div>
-      <div class="row">
-        <button id="request-mic">Enable microphone</button>
-      </div>
-      <p>Status: <span id="reg-status">unregistered</span></p>
-      <p id="account-error"></p>
-    </section>
+      <div class="content" id="content">
+        <!-- Dialer -->
+        <section class="panel" id="panel-dialer">
+          <div class="target-wrap">
+            <input id="target" type="text" autocomplete="off" placeholder="Enter a number or extension" />
+          </div>
+          <div class="keypad" id="dial-keypad">
+            <button class="key" data-digit="1"><span class="digit">1</span></button>
+            <button class="key" data-digit="2"><span class="digit">2</span><span class="letters">ABC</span></button>
+            <button class="key" data-digit="3"><span class="digit">3</span><span class="letters">DEF</span></button>
+            <button class="key" data-digit="4"><span class="digit">4</span><span class="letters">GHI</span></button>
+            <button class="key" data-digit="5"><span class="digit">5</span><span class="letters">JKL</span></button>
+            <button class="key" data-digit="6"><span class="digit">6</span><span class="letters">MNO</span></button>
+            <button class="key" data-digit="7"><span class="digit">7</span><span class="letters">PQRS</span></button>
+            <button class="key" data-digit="8"><span class="digit">8</span><span class="letters">TUV</span></button>
+            <button class="key" data-digit="9"><span class="digit">9</span><span class="letters">WXYZ</span></button>
+            <button class="key" data-digit="*"><span class="digit">*</span></button>
+            <button class="key" data-digit="0"><span class="digit">0</span><span class="letters">+</span></button>
+            <button class="key" data-digit="#"><span class="digit">#</span></button>
+          </div>
+          <div class="call-row">
+            <button class="call-fab" id="call" title="Call">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+                />
+              </svg>
+            </button>
+          </div>
+          <p class="err-text" id="call-error"></p>
+        </section>
 
-    <section id="dialer-section">
-      <label>
-        <span>Call target</span>
-        <input id="target" type="text" autocomplete="off" placeholder="1002 or 1002@pbx.example.com" />
-      </label>
-      <div class="row">
-        <button id="call">Call</button>
-        <button id="hangup">Hangup</button>
-      </div>
-      <div class="row" id="incoming-row" hidden>
-        <button id="answer">Answer</button>
-        <button id="reject">Reject</button>
-      </div>
-      <p id="call-status">No active call</p>
-    </section>
+        <!-- Contacts (M3 — not built yet) -->
+        <section class="panel" id="panel-contacts" hidden>
+          <div class="placeholder">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="8" r="3.5" /><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7" /><path
+                  d="M23 21c0-3.3-2.4-6-5.5-6.8"
+                />
+              </svg>
+            </div>
+            <div class="title">Contacts are coming soon</div>
+            <div class="desc">An address book with click-to-call is planned for a future update.</div>
+          </div>
+        </section>
 
-    <section id="controls-section">
-      <div class="row">
-        <button id="mute" disabled>Mute</button>
-        <button id="hold" disabled>Hold</button>
-      </div>
-      <div id="dtmf-grid">
-        <button class="dtmf-key" data-tone="1" disabled>1</button>
-        <button class="dtmf-key" data-tone="2" disabled>2</button>
-        <button class="dtmf-key" data-tone="3" disabled>3</button>
-        <button class="dtmf-key" data-tone="4" disabled>4</button>
-        <button class="dtmf-key" data-tone="5" disabled>5</button>
-        <button class="dtmf-key" data-tone="6" disabled>6</button>
-        <button class="dtmf-key" data-tone="7" disabled>7</button>
-        <button class="dtmf-key" data-tone="8" disabled>8</button>
-        <button class="dtmf-key" data-tone="9" disabled>9</button>
-        <button class="dtmf-key" data-tone="*" disabled>*</button>
-        <button class="dtmf-key" data-tone="0" disabled>0</button>
-        <button class="dtmf-key" data-tone="#" disabled>#</button>
-      </div>
-      <label>
-        <span>Transfer target</span>
-        <input id="transfer-target" type="text" autocomplete="off" placeholder="1002 or 1002@pbx.example.com" />
-      </label>
-      <div class="row">
-        <button id="blind-transfer" disabled>Blind transfer</button>
-        <button id="attended-transfer-start" disabled>Attended transfer</button>
-      </div>
-      <div class="row" id="attended-transfer-row" hidden>
-        <button id="attended-transfer-complete">Complete</button>
-        <button id="attended-transfer-cancel">Cancel</button>
-      </div>
-      <p id="attended-transfer-status"></p>
-    </section>
+        <!-- History -->
+        <section class="panel" id="panel-history" hidden>
+          <div class="history-head">
+            <div class="h2">Call history</div>
+            <button class="clear-btn" id="history-clear">Clear</button>
+          </div>
+          <div id="history-list"></div>
+          <div class="placeholder" id="history-empty" hidden style="min-height: 220px">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" />
+              </svg>
+            </div>
+            <div class="title">No calls yet</div>
+          </div>
+        </section>
 
-    <section id="history-section">
-      <div class="row">
-        <span style="flex: 1; font-weight: 600">Call history</span>
-        <button id="history-clear" style="flex: 0 0 auto; padding: 2px 8px">Clear</button>
+        <!-- Settings (M4 — not built yet) -->
+        <section class="panel" id="panel-settings" hidden>
+          <div class="placeholder">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" /><path
+                  d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.3 2.6a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.3-2.6a7.7 7.7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"
+                />
+              </svg>
+            </div>
+            <div class="title">Settings are coming soon</div>
+            <div class="desc">Audio device selection, ringtones, auto-answer, and page-highlighting controls are planned for a future update.</div>
+          </div>
+        </section>
+
+        <!-- Account -->
+        <section class="panel" id="panel-account" hidden>
+          <div class="field">
+            <label>SIP URI</label>
+            <input id="uri" type="text" autocomplete="off" placeholder="1001@pbx.example.com" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="password" type="password" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label>WSS server</label>
+            <input id="wssServer" type="text" autocomplete="off" placeholder="wss://pbx.example.com:8089/ws" />
+          </div>
+          <div class="field">
+            <label>Display name <span class="opt">(optional)</span></label>
+            <input id="displayName" type="text" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label>Auth username <span class="opt">(optional — if different from the URI)</span></label>
+            <input id="authUsername" type="text" autocomplete="off" />
+          </div>
+
+          <div class="status-row"><span class="status-dot" id="reg-status-dot"></span><span id="reg-status-text">unregistered</span></div>
+          <p class="err-text" id="account-error"></p>
+
+          <button class="link-btn" id="request-mic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><line x1="12" y1="18" x2="12" y2="22" /><line
+                x1="8"
+                y1="22"
+                x2="16"
+                y2="22"
+              />
+            </svg>
+            Enable microphone access
+          </button>
+
+          <div class="row">
+            <button class="btn btn-secondary" id="unregister">Unregister</button>
+            <button class="btn btn-primary" id="save-register">Save &amp; Register</button>
+          </div>
+        </section>
+
+        <!-- Full-bleed call screens (shown instead of the panels above whenever a call exists) -->
+        <div id="call-view" hidden>
+          <section class="call-screen" id="call-ringing" hidden>
+            <div class="call-top"><span class="call-eyebrow"><span class="dot"></span>Incoming call</span></div>
+            <div class="call-who">
+              <div class="call-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+                </svg>
+              </div>
+              <div class="call-name" id="ringing-name"></div>
+              <div class="call-num" id="ringing-sub"></div>
+            </div>
+            <div class="call-actions">
+              <div class="call-action">
+                <button class="call-fab-lg reject" id="reject">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+                      opacity="0.5"
+                    /><line x1="3" y1="3" x2="21" y2="21" />
+                  </svg>
+                </button>
+                <span class="lbl">Decline</span>
+              </div>
+              <div class="call-action">
+                <button class="call-fab-lg answer" id="answer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+                    />
+                  </svg>
+                </button>
+                <span class="lbl">Answer</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="call-screen" id="call-connecting" hidden>
+            <div class="call-top"><span class="call-eyebrow"><span class="dot"></span><span id="connecting-eyebrow-text">Calling&hellip;</span></span></div>
+            <div class="call-who">
+              <div class="call-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+                </svg>
+              </div>
+              <div class="call-name" id="connecting-name"></div>
+              <div class="call-num" id="connecting-sub"></div>
+            </div>
+            <div class="call-actions single">
+              <div class="call-action">
+                <button class="call-fab-lg reject" id="connecting-hangup">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+                      opacity="0.5"
+                    /><line x1="3" y1="3" x2="21" y2="21" />
+                  </svg>
+                </button>
+                <span class="lbl">Hang up</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="call-screen" id="call-active" hidden>
+            <div class="active-who">
+              <span class="status-pill" id="active-status-pill"><span class="dot"></span><span id="active-status-text">Established</span></span>
+              <div class="active-name" id="active-name"></div>
+              <div class="active-num" id="active-sub"></div>
+            </div>
+
+            <!-- normal controls -->
+            <div id="active-controls">
+              <div class="callbar">
+                <div class="ctrl">
+                  <button class="ctrl-btn" id="mute">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><line x1="12" y1="18" x2="12" y2="22" /><line
+                        x1="8"
+                        y1="22"
+                        x2="16"
+                        y2="22"
+                      />
+                    </svg>
+                  </button>
+                  <span class="lbl" id="mute-lbl">Mute</span>
+                </div>
+                <div class="ctrl">
+                  <button class="ctrl-btn" id="hold">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
+                    </svg>
+                  </button>
+                  <span class="lbl" id="hold-lbl">Hold</span>
+                </div>
+                <div class="ctrl">
+                  <button class="ctrl-btn" id="open-keypad">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="6" cy="6" r="1.5" /><circle cx="12" cy="6" r="1.5" /><circle cx="18" cy="6" r="1.5" /><circle cx="6" cy="12" r="1.5" /><circle
+                        cx="12"
+                        cy="12"
+                        r="1.5"
+                      /><circle cx="18" cy="12" r="1.5" /><circle cx="6" cy="18" r="1.5" /><circle cx="12" cy="18" r="1.5" /><circle
+                        cx="18"
+                        cy="18"
+                        r="1.5"
+                      />
+                    </svg>
+                  </button>
+                  <span class="lbl">Keypad</span>
+                </div>
+              </div>
+              <div class="entry-row">
+                <button class="entry" id="open-blind-transfer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 6l6 6-6 6" /><path d="M3 6v6a6 6 0 0 0 6 6h12" />
+                  </svg>
+                  Blind transfer
+                </button>
+                <button class="entry" id="open-attended-transfer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 6l6 6-6 6" /><path d="M3 6v6a6 6 0 0 0 6 6h12" />
+                  </svg>
+                  Attended
+                </button>
+              </div>
+
+              <div class="transfer-panel" id="blind-transfer-panel" hidden>
+                <div class="field">
+                  <label>Transfer to</label>
+                  <input id="blind-transfer-target" type="text" autocomplete="off" placeholder="1002 or 1002@pbx.example.com" />
+                </div>
+                <div class="row">
+                  <button class="btn btn-secondary" id="blind-transfer-cancel">Cancel</button>
+                  <button class="btn btn-primary" id="blind-transfer-send">Transfer</button>
+                </div>
+              </div>
+
+              <div class="transfer-panel" id="attended-transfer-panel" hidden>
+                <div class="field">
+                  <label>Consult with</label>
+                  <input id="attended-transfer-target" type="text" autocomplete="off" placeholder="1002 or 1002@pbx.example.com" />
+                </div>
+                <div class="row">
+                  <button class="btn btn-secondary" id="attended-transfer-cancel-start">Cancel</button>
+                  <button class="btn btn-primary" id="attended-transfer-start">Start</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- DTMF keypad -->
+            <div id="call-keypad" hidden>
+              <div class="entered" id="dtmf-entered"><span class="ph">Enter DTMF digits&hellip;</span></div>
+              <div class="keypad" id="dtmf-keypad">
+                <button class="key dtmf-key" data-tone="1"><span class="digit">1</span></button>
+                <button class="key dtmf-key" data-tone="2"><span class="digit">2</span><span class="letters">ABC</span></button>
+                <button class="key dtmf-key" data-tone="3"><span class="digit">3</span><span class="letters">DEF</span></button>
+                <button class="key dtmf-key" data-tone="4"><span class="digit">4</span><span class="letters">GHI</span></button>
+                <button class="key dtmf-key" data-tone="5"><span class="digit">5</span><span class="letters">JKL</span></button>
+                <button class="key dtmf-key" data-tone="6"><span class="digit">6</span><span class="letters">MNO</span></button>
+                <button class="key dtmf-key" data-tone="7"><span class="digit">7</span><span class="letters">PQRS</span></button>
+                <button class="key dtmf-key" data-tone="8"><span class="digit">8</span><span class="letters">TUV</span></button>
+                <button class="key dtmf-key" data-tone="9"><span class="digit">9</span><span class="letters">WXYZ</span></button>
+                <button class="key dtmf-key" data-tone="*"><span class="digit">*</span></button>
+                <button class="key dtmf-key" data-tone="0"><span class="digit">0</span><span class="letters">+</span></button>
+                <button class="key dtmf-key" data-tone="#"><span class="digit">#</span></button>
+              </div>
+              <div class="row" style="margin-top: 14px">
+                <button class="btn btn-secondary" id="close-keypad">Back to call</button>
+              </div>
+            </div>
+
+            <!-- Attended-transfer consultation -->
+            <div id="call-consult" hidden>
+              <div class="held-card">
+                <div class="held-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+                  </svg>
+                </div>
+                <div class="held-info">
+                  <div class="held-name" id="consult-held-name"></div>
+                  <div class="held-badge"><span class="dot"></span>On hold &middot; original call</div>
+                </div>
+              </div>
+              <div class="divider"><span class="line"></span><span class="lbl">Consulting</span><span class="line"></span></div>
+              <div class="consult">
+                <div class="consult-avatar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+                  </svg>
+                </div>
+                <div class="consult-name" id="consult-name"></div>
+                <span class="status-pill" id="consult-status-pill"><span class="dot"></span><span id="consult-status-text"></span></span>
+              </div>
+              <div class="row">
+                <button class="btn btn-secondary" id="attended-transfer-cancel">Cancel</button>
+                <button class="btn btn-primary" id="attended-transfer-complete">Complete Transfer</button>
+              </div>
+            </div>
+
+            <div class="hangup-row" id="active-hangup-row">
+              <button class="hangup-fab" id="hangup">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+                    opacity="0.5"
+                  /><line x1="3" y1="3" x2="21" y2="21" />
+                </svg>
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
-      <ul id="history-list"></ul>
-    </section>
+
+      <nav class="tabbar" id="tabbar">
+        <button class="tab active" data-tab="dialer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M4 4c0 9 7 16 16 16v-3.5a1 1 0 0 0-.8-1l-3.2-.6a1 1 0 0 0-1 .5l-1 1.8a13 13 0 0 1-6.2-6.2l1.8-1a1 1 0 0 0 .5-1L9.5 4.8a1 1 0 0 0-1-.8H4Z"
+            />
+          </svg>
+          Dialer
+        </button>
+        <button class="tab" data-tab="contacts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="8" r="3.5" /><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7" /><path
+              d="M23 21c0-3.3-2.4-6-5.5-6.8"
+            />
+          </svg>
+          Contacts
+        </button>
+        <button class="tab" data-tab="history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" />
+          </svg>
+          History
+        </button>
+        <button class="tab" data-tab="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" /><path
+              d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.7 7.7 0 0 0-1.7-1L15 3h-4l-.3 2.6a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.7 7.7 0 0 0 1.7 1L11 21h4l.3-2.6a7.7 7.7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z"
+            />
+          </svg>
+          Settings
+        </button>
+        <button class="tab" data-tab="account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+          </svg>
+          Account
+        </button>
+      </nav>
+    </div>
 
     <script type="module" src="/src/popup/main.ts"></script>
   </body>
