@@ -53,6 +53,15 @@ transport, non-Chromium browsers.
 
 ## 3. Milestones
 
+**UI design reference:** the popup's dark theme (colors, type scale,
+spacing, icons) and screen layouts come from a published design canvas —
+https://claude.ai/code/artifact/221965c2-7516-4453-889f-b80c2d318074
+("SIP Phone Design") — covering all 20 screens below, both built and
+not-yet-built (M3's contacts/multi-account, M4's settings, M5's in-page
+highlight style). `popup.html`/`src/popup/main.ts` already match it for
+M1/M2; when implementing M3/M4/M5 UI, build to the existing mockups on
+that canvas rather than designing fresh.
+
 ### M0 — Project scaffold
 - MV3 `manifest.json`, permissions (`storage`, `offscreen`, `notifications`),
   build tooling (plain TS/Vite or esbuild — no framework needed for a popup
